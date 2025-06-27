@@ -2,7 +2,7 @@ name: Keep Render App Awake
 
 on:
   schedule:
-    - cron: "*/5 * * * *" 
+    - cron: '*/5 * * * *'  # Every 5 minutes
   workflow_dispatch:
 
 jobs:
@@ -10,28 +10,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo (optional, if ping.js is in repo)
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18"
+          node-version: '18'
 
-      - name: Install Puppeteer
+      - name: Install dependencies
         run: npm install puppeteer
 
-      - name: Create ping script
+      - name: Ping Render app
         run: |
-          echo "const puppeteer = require('puppeteer');
+          node -e "
+          const puppeteer = require('puppeteer');
           (async () => {
             const browser = await puppeteer.launch({
+              headless: 'new',
               args: ['--no-sandbox', '--disable-setuid-sandbox']
             });
             const page = await browser.newPage();
-            await page.goto('https://luminouz-18x0.onrender.com', { waitUntil: 'networkidle2' });
+            await page.goto('https://luminouz-18x0.onrender.com', { 
+              waitUntil: 'networkidle2',
+              timeout: 30000 
+            });
+            console.log('Successfully pinged the app');
             await browser.close();
-          })();" > ping.js
-
+          })();
+          "
       - name: Run ping script
         run: node ping.js
